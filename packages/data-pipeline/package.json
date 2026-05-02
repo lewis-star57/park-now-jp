@@ -1,0 +1,27 @@
+{
+  "name": "@park-now-jp/data-pipeline",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch": "tsx src/index.ts",
+    "fetch:tokyo": "tsx src/index.ts --pref 13",
+    "fetch:holidays": "tsx src/fetch-holidays.ts ../../apps/web/lib/holidays/data.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'no lint configured'"
+  },
+  "dependencies": {
+    "@park-now-jp/shared": "workspace:*",
+    "csv-parse": "^5.5.0",
+    "iconv-lite": "^0.6.3",
+    "unzipper": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/unzipper": "^0.10.10",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

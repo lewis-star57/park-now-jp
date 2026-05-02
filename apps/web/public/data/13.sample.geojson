@@ -1,0 +1,313 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "lastUpdated": "2026-04-01",
+    "note": "MVP 用サンプルデータ（神保町・神田周辺・10件）。実データではなく、実在の交差点・通り名にあわせた近似座標。座標は GeoJSON 仕様に従い [lng, lat] 順。"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [139.75740, 35.69620],
+          [139.75880, 35.69620]
+        ]
+      },
+      "properties": {
+        "id": "13_sample_001",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "神保町交差点 東 (靖国通り)",
+        "address": "千代田区神田神保町1丁目",
+        "spaces": 6,
+        "timeLimitMinutes": 60,
+        "feeYen": 300,
+        "vehicleType": "standard",
+        "operatingHours": [{ "startTime": "09:00", "endTime": "19:00" }],
+        "operatingDays": [1, 2, 3, 4, 5, 6],
+        "exclusions": ["holidays"],
+        "overlappingRegulations": [
+          {
+            "code": 22,
+            "description": "駐車禁止 8:00-20:00 日祝除く",
+            "operatingHours": [{ "startTime": "08:00", "endTime": "20:00" }],
+            "operatingDays": [1, 2, 3, 4, 5, 6],
+            "isAllDay": false
+          }
+        ],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [139.75940, 35.69600],
+          [139.76070, 35.69590]
+        ]
+      },
+      "properties": {
+        "id": "13_sample_002",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "靖国通り 神保町三丁目",
+        "address": "千代田区神田神保町3丁目",
+        "spaces": 4,
+        "timeLimitMinutes": 60,
+        "feeYen": 300,
+        "vehicleType": "standard",
+        "operatingHours": [{ "startTime": "09:00", "endTime": "19:00" }],
+        "operatingDays": [0, 1, 2, 3, 4, 5, 6],
+        "exclusions": [],
+        "overlappingRegulations": [
+          {
+            "code": 22,
+            "description": "駐車禁止 8:00-20:00",
+            "operatingHours": [{ "startTime": "08:00", "endTime": "20:00" }],
+            "operatingDays": [0, 1, 2, 3, 4, 5, 6],
+            "isAllDay": false
+          }
+        ],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.76520, 35.69510]
+      },
+      "properties": {
+        "id": "13_sample_003",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "小川町駅前 二輪専用",
+        "address": "千代田区神田小川町2丁目",
+        "spaces": 8,
+        "timeLimitMinutes": 60,
+        "feeYen": 100,
+        "vehicleType": "motorcycle",
+        "operatingHours": [{ "startTime": "08:00", "endTime": "20:00" }],
+        "operatingDays": [1, 2, 3, 4, 5, 6],
+        "exclusions": ["holidays"],
+        "overlappingRegulations": [],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [139.76330, 35.69570],
+          [139.76330, 35.69680]
+        ]
+      },
+      "properties": {
+        "id": "13_sample_004",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "本郷通り 駿河台下",
+        "address": "千代田区神田駿河台3丁目",
+        "spaces": 5,
+        "timeLimitMinutes": 40,
+        "feeYen": 200,
+        "vehicleType": "standard",
+        "operatingHours": [{ "startTime": "10:00", "endTime": "18:00" }],
+        "operatingDays": [1, 2, 3, 4, 5],
+        "exclusions": ["holidays", "saturdays"],
+        "overlappingRegulations": [
+          {
+            "code": 22,
+            "description": "駐車禁止 24時間",
+            "isAllDay": true
+          }
+        ],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [139.76790, 35.69400],
+          [139.76790, 35.69510]
+        ]
+      },
+      "properties": {
+        "id": "13_sample_005",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "中央通り 淡路町",
+        "address": "千代田区神田淡路町2丁目",
+        "spaces": 7,
+        "timeLimitMinutes": 60,
+        "feeYen": 300,
+        "vehicleType": "standard",
+        "operatingHours": [{ "startTime": "09:00", "endTime": "19:00" }],
+        "operatingDays": [1, 2, 3, 4, 5, 6],
+        "exclusions": ["holidays"],
+        "overlappingRegulations": [
+          {
+            "code": 22,
+            "description": "駐車禁止 8:00-20:00 日祝除く",
+            "operatingHours": [{ "startTime": "08:00", "endTime": "20:00" }],
+            "operatingDays": [1, 2, 3, 4, 5, 6],
+            "isAllDay": false
+          }
+        ],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.77079, 35.69165]
+      },
+      "properties": {
+        "id": "13_sample_006",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "神田駅西口",
+        "address": "千代田区鍛冶町2丁目",
+        "spaces": 3,
+        "timeLimitMinutes": 60,
+        "feeYen": 300,
+        "vehicleType": "standard",
+        "operatingHours": [{ "startTime": "09:00", "endTime": "19:00" }],
+        "operatingDays": [0, 1, 2, 3, 4, 5, 6],
+        "exclusions": [],
+        "overlappingRegulations": [],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [139.76970, 35.69080],
+          [139.77100, 35.69080]
+        ]
+      },
+      "properties": {
+        "id": "13_sample_007",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "鍛冶町 本通り",
+        "address": "千代田区鍛冶町1丁目",
+        "spaces": 4,
+        "timeLimitMinutes": 60,
+        "feeYen": 300,
+        "vehicleType": "standard",
+        "operatingHours": [{ "startTime": "09:00", "endTime": "19:00" }],
+        "operatingDays": [1, 2, 3, 4, 5, 6],
+        "exclusions": ["holidays"],
+        "overlappingRegulations": [
+          {
+            "code": 22,
+            "description": "駐車禁止 8:00-20:00 日祝除く",
+            "operatingHours": [{ "startTime": "08:00", "endTime": "20:00" }],
+            "operatingDays": [1, 2, 3, 4, 5, 6],
+            "isAllDay": false
+          }
+        ],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.76270, 35.69300]
+      },
+      "properties": {
+        "id": "13_sample_008",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "錦町 二輪",
+        "address": "千代田区神田錦町3丁目",
+        "spaces": 6,
+        "timeLimitMinutes": 60,
+        "feeYen": 100,
+        "vehicleType": "motorcycle",
+        "operatingHours": [{ "startTime": "08:00", "endTime": "20:00" }],
+        "operatingDays": [0, 1, 2, 3, 4, 5, 6],
+        "exclusions": [],
+        "overlappingRegulations": [],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [139.75620, 35.69510],
+          [139.75760, 35.69510]
+        ]
+      },
+      "properties": {
+        "id": "13_sample_009",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "神保町すずらん通り",
+        "address": "千代田区神田神保町1丁目",
+        "spaces": 3,
+        "timeLimitMinutes": 40,
+        "feeYen": 200,
+        "vehicleType": "standard",
+        "operatingHours": [{ "startTime": "11:00", "endTime": "17:00" }],
+        "operatingDays": [1, 2, 3, 4, 5, 6],
+        "exclusions": ["holidays"],
+        "overlappingRegulations": [
+          {
+            "code": 22,
+            "description": "駐車禁止 8:00-20:00 日祝除く",
+            "operatingHours": [{ "startTime": "08:00", "endTime": "20:00" }],
+            "operatingDays": [1, 2, 3, 4, 5, 6],
+            "isAllDay": false
+          }
+        ],
+        "lastUpdated": "2026-04-01"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.77550, 35.69370]
+      },
+      "properties": {
+        "id": "13_sample_010",
+        "prefCode": "13",
+        "policeStationCode": "100",
+        "name": "岩本町 高齢者専用",
+        "address": "千代田区神田岩本町",
+        "spaces": 2,
+        "timeLimitMinutes": 60,
+        "feeYen": 300,
+        "vehicleType": "senior",
+        "operatingHours": [{ "startTime": "09:00", "endTime": "19:00" }],
+        "operatingDays": [1, 2, 3, 4, 5, 6],
+        "exclusions": ["holidays"],
+        "overlappingRegulations": [
+          {
+            "code": 22,
+            "description": "駐車禁止 8:00-20:00 日祝除く",
+            "operatingHours": [{ "startTime": "08:00", "endTime": "20:00" }],
+            "operatingDays": [1, 2, 3, 4, 5, 6],
+            "isAllDay": false
+          }
+        ],
+        "lastUpdated": "2026-04-01"
+      }
+    }
+  ]
+}

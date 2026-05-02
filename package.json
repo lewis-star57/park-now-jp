@@ -1,0 +1,36 @@
+{
+  "name": "park-now-jp",
+  "version": "0.0.1",
+  "private": true,
+  "description": "今この瞬間、停められるか？が一目でわかる、日本全国対応のパーキングメーター PWA",
+  "license": "MIT",
+  "author": "lewis-star57",
+  "homepage": "https://github.com/lewis-star57/park-now-jp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lewis-star57/park-now-jp.git"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm --filter @park-now-jp/web dev",
+    "build": "pnpm --filter @park-now-jp/web build",
+    "start": "pnpm --filter @park-now-jp/web start",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write '**/*.{ts,tsx,js,jsx,md,json,yml}'",
+    "data:fetch": "pnpm --filter @park-now-jp/data-pipeline fetch",
+    "data:fetch:tokyo": "pnpm --filter @park-now-jp/data-pipeline fetch -- --pref 13",
+    "data:fetch:holidays": "pnpm --filter @park-now-jp/data-pipeline fetch:holidays"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

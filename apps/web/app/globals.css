@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/* MapLibre GL JS の必須スタイル（地図 canvas のサイズ計算に必須） */
+@import "maplibre-gl/dist/maplibre-gl.css";
+
+@theme {
+  --color-bg: #0a0e14;
+  --color-bg-elev: #131822;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-text: #e8edf5;
+  --color-text-dim: #8892a6;
+  --color-text-faint: #4a5468;
+  --color-status-free: #4ade80;
+  --color-status-paid: #fbbf24;
+  --color-status-closed: #f87171;
+  --color-accent: #60a5fa;
+
+  --font-display: "Zen Kaku Gothic New", "Noto Sans JP", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-feature-settings: "palt";
+  overscroll-behavior: none;
+}
