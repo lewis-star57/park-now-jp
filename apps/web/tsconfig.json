@@ -8,6 +8,10 @@
         "name": "next"
       }
     ],
+    // baseUrl を明示しないと extends 元の "." (リポジトリルート) を継承し、
+    // 結果 "@/*" がリポジトリルート起点になって next build (webpack) で
+    // モジュール解決に失敗する。apps/web 起点に固定する。
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"

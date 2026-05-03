@@ -29,7 +29,10 @@ export function pickRepresentativeCoordinate(
   geom: RoutableGeometry
 ): [number, number] {
   if (geom.type === "Point") {
-    const [lng, lat] = geom.coordinates;
+    // noUncheckedIndexedAccess 配下では分割代入が undefined を含むため
+    // 明示的に non-null assertion で取る（GeoJSON Point は 2 要素必須）。
+    const lng = geom.coordinates[0]!;
+    const lat = geom.coordinates[1]!;
     return [lng, lat];
   }
 

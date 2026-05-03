@@ -85,7 +85,8 @@ const dailyMeter: ParkingMeter = {
 const tokyo = (date: string, hour: number, minute: number = 0): Date => {
   // JST で指定された時刻を UTC として表現するため、9時間引く
   const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d, hour - 9, minute));
+  // テストフィクスチャでは固定形式 "YYYY-MM-DD" を渡すので non-null 保証
+  return new Date(Date.UTC(y!, m! - 1, d!, hour - 9, minute));
 };
 
 // ============================================================================

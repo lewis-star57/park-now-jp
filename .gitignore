@@ -9,6 +9,11 @@ dist/
 build/
 out/
 
+# Serwist が next build 時に生成する Service Worker
+# (next.config.ts の swDest=public/sw.js で書き出される成果物)
+apps/web/public/sw.js
+apps/web/public/swe-worker-*.js
+
 # misc
 .DS_Store
 *.pem
