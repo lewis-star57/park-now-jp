@@ -1,5 +1,10 @@
 import type { MetadataRoute } from "next";
 
+// output: 'export' (静的エクスポート) では Next.js のメタデータルートが
+// 既定では動的扱いになりビルドが失敗する。force-static で静的化を明示し、
+// `out/manifest.webmanifest` として書き出される。
+export const dynamic = "force-static";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Park Now JP — 今すぐ停められるパーキングメーター",

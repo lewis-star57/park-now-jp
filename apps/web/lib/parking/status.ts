@@ -17,7 +17,6 @@
 import { toZonedTime } from "date-fns-tz";
 import type {
   DayOfWeek,
-  MeterStatus,
   OperatingHour,
   ParkingMeter,
   StatusEvaluator,
@@ -162,7 +161,9 @@ function isWithinHours(jst: Date, hour: OperatingHour): boolean {
 
 function hhmmToMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + (m ?? 0);
+  // noUncheckedIndexedAccess 配下では分割代入が undefined を含むため、
+  // ?? 0 で防御的に扱う（実データは "HH:MM" 固定形式）。
+  return (h ?? 0) * 60 + (m ?? 0);
 }
 
 /**
