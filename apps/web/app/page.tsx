@@ -14,7 +14,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Feature } from "geojson";
 import {
@@ -66,25 +66,48 @@ export default function HomePage() {
     motorcycle: false,
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  // データの初回ロード
-  useEffect(() => {
+  // データ取得。エラー時のリトライボタンと online イベントから再利用するため
+  // 関数化。返り値は cleanup（useEffect から呼ばれた場合のキャンセル用）。
+  const loadData = useCallback((): (() => void) => {
     let cancelled = false;
+    setError(null);
+    setLoading(true);
     fetch(DATA_URL)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<ParkingMeterCollection>;
       })
       .then((data) => {
-        if (!cancelled) setRaw(data);
+        if (!cancelled) {
+          setRaw(data);
+          setLoading(false);
+        }
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : String(e));
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // 初回ロード
+  useEffect(() => {
+    return loadData();
+  }, [loadData]);
+
+  // ネット復帰時の自動リトライ（エラー状態が残っているときだけ）
+  useEffect(() => {
+    if (!error) return;
+    const onOnline = () => loadData();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [error, loadData]);
 
   // 1分ごとに再評価
   useEffect(() => {
@@ -158,8 +181,22 @@ export default function HomePage() {
       </div>
 
       {error && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-lg bg-status-closed/20 border border-status-closed/40 text-sm">
-          データ読み込みエラー: {error}
+        <div
+          role="alert"
+          className="absolute top-20 left-1/2 -translate-x-1/2 z-20 max-w-[90vw] px-4 py-3 rounded-lg bg-status-closed/20 border border-status-closed/40 shadow-lg flex items-center gap-3"
+        >
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">データ読み込みエラー</p>
+            <p className="text-xs text-text-dim mt-0.5 truncate">{error}</p>
+          </div>
+          <button
+            type="button"
+            onClick={loadData}
+            disabled={loading}
+            className="shrink-0 px-3 py-1.5 rounded bg-status-closed/40 hover:bg-status-closed/60 disabled:opacity-50 disabled:cursor-wait text-xs font-semibold whitespace-nowrap"
+          >
+            {loading ? "読込中…" : "再読込"}
+          </button>
         </div>
       )}
 
