@@ -13,10 +13,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Polygon } from "geojson";
+import type { FeatureCollection, Polygon } from "geojson";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { ParkingMeterCollection } from "@park-now-jp/shared";
+import type { ParkingMeter, ParkingMeterGeometry, StatusLevel } from "@park-now-jp/shared";
 import type { ToastLevel } from "@/components/ui/Toast";
 
 const VOYAGER_STYLE =
@@ -219,8 +219,21 @@ const STATUS_COLORS = {
   closed: "#f87171",
 } as const;
 
+/**
+ * 評価結果（色分けレベル）を properties に注入したメーター。
+ * page.tsx が evaluateStatus の結果を _statusLevel に詰めて Map に渡し、
+ * MapLibre のデータ駆動スタイル（["get", "_statusLevel"]）が色を決める。
+ * この型を共有することで page 側の `as unknown as` 二重キャストが不要になる。
+ */
+export type AnnotatedMeterProperties = ParkingMeter & { _statusLevel: StatusLevel };
+export type AnnotatedMeterCollection = FeatureCollection<
+  ParkingMeterGeometry,
+  AnnotatedMeterProperties
+>;
+
 interface MapProps {
-  data: ParkingMeterCollection;
+  /** 評価結果（_statusLevel）を埋め込んだメーターコレクション */
+  data: AnnotatedMeterCollection;
   /** 地図にマーカーをタップしたとき呼ばれる（properties.id を渡す） */
   onMeterClick: (meterId: string) => void;
   /** 現在地取得などの一時的な通知を親に伝える（トースト表示用） */
