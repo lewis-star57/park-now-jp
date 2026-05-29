@@ -31,6 +31,7 @@ import type {
 import { FilterChips, type FilterValue } from "@/components/filters/FilterChips";
 import { MeterSheet } from "@/components/sheet/MeterSheet";
 import { DisclaimerDialog } from "@/components/ui/DisclaimerDialog";
+import { Toast, type ToastLevel, type ToastMessage } from "@/components/ui/Toast";
 
 // MapLibre は SSR 不可なのでクライアントオンリーでロード。
 // 重要: ここを `Map` という名前にすると下のスコープで `new Map<...>()` の
@@ -67,6 +68,7 @@ export default function HomePage() {
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // データ取得。エラー時のリトライボタンと online イベントから再利用するため
   // 関数化。返り値は cleanup（useEffect から呼ばれた場合のキャンセル用）。
@@ -95,6 +97,12 @@ export default function HomePage() {
       cancelled = true;
     };
   }, []);
+
+  // 一時的な通知（トースト）。同じ文言でも id を変えて再表示できるようにする。
+  const showToast = useCallback((text: string, level: ToastLevel) => {
+    setToast((prev) => ({ id: (prev?.id ?? 0) + 1, text, level }));
+  }, []);
+  const dismissToast = useCallback(() => setToast(null), []);
 
   // 初回ロード
   useEffect(() => {
@@ -164,7 +172,11 @@ export default function HomePage() {
 
   return (
     <main className="relative h-[100dvh] w-screen overflow-hidden">
-      <MeterMap data={annotated as unknown as ParkingMeterCollection} onMeterClick={setSelectedId} />
+      <MeterMap
+        data={annotated as unknown as ParkingMeterCollection}
+        onMeterClick={setSelectedId}
+        onToast={showToast}
+      />
 
       <FilterChips
         value={filter}
@@ -206,6 +218,8 @@ export default function HomePage() {
         geometry={selectedMeter?.geometry ?? null}
         onClose={() => setSelectedId(null)}
       />
+
+      <Toast toast={toast} onDismiss={dismissToast} />
 
       <DisclaimerDialog />
     </main>

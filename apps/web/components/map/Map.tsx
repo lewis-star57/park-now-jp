@@ -17,6 +17,7 @@ import type { Polygon } from "geojson";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { ParkingMeterCollection } from "@park-now-jp/shared";
+import type { ToastLevel } from "@/components/ui/Toast";
 
 const VOYAGER_STYLE =
   "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
@@ -32,6 +33,9 @@ const GEOLOCATE_FLY_DURATION = 1500;
 
 const USER_LOCATION_SOURCE = "user-location";
 const USER_ACCURACY_SOURCE = "user-accuracy";
+
+/** 一時的な通知（トースト）を親へ伝えるコールバック。window.alert の置き換え先。 */
+type NotifyToast = (message: string, level: ToastLevel) => void;
 
 /**
  * 中心座標と半径(m)から円の Polygon を生成する。
@@ -79,7 +83,7 @@ function buildAccuracyPolygon(
  *  - ズーム = max(現在ズーム, 16)
  *  - duration = 1500ms
  *  - ボタン押下中は disabled + 半透明
- *  - エラー時は alert
+ *  - エラー時はトースト通知（コンストラクタで受け取る notify 経由）
  *  - 精度円と青ドットは自前のレイヤーで描画
  */
 class GeolocateButtonControl implements maplibregl.IControl {
@@ -87,6 +91,9 @@ class GeolocateButtonControl implements maplibregl.IControl {
   private _container: HTMLDivElement | null = null;
   private _button: HTMLButtonElement | null = null;
   private _busy = false;
+
+  /** @param _notify window.alert の代わりに使う通知コールバック */
+  constructor(private readonly _notify: NotifyToast) {}
 
   onAdd(map: maplibregl.Map): HTMLElement {
     this._map = map;
@@ -133,7 +140,7 @@ class GeolocateButtonControl implements maplibregl.IControl {
     if (!map || this._busy) return;
 
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      window.alert("このブラウザは現在地取得に対応していません。");
+      this._notify("このブラウザは現在地取得に対応していません。", "warn");
       return;
     }
     // HTTPS でない・localhost でもない場合は getCurrentPosition が
@@ -191,15 +198,18 @@ class GeolocateButtonControl implements maplibregl.IControl {
 
   private _onError(err: GeolocationPositionError): void {
     this._setBusy(false);
-    const message =
-      err.code === err.PERMISSION_DENIED
-        ? "ブラウザの位置情報の利用が拒否されています。設定から許可してください。"
-        : err.code === err.POSITION_UNAVAILABLE
-          ? "現在地を取得できませんでした（位置情報が利用できません）。"
-          : err.code === err.TIMEOUT
-            ? "現在地取得がタイムアウトしました。もう一度お試しください。"
-            : "現在地を取得できませんでした。";
-    window.alert(message);
+    if (err.code === err.PERMISSION_DENIED) {
+      this._notify(
+        "ブラウザの位置情報の利用が拒否されています。設定から許可してください。",
+        "warn"
+      );
+    } else if (err.code === err.POSITION_UNAVAILABLE) {
+      this._notify("現在地を取得できませんでした（位置情報が利用できません）。", "error");
+    } else if (err.code === err.TIMEOUT) {
+      this._notify("現在地取得がタイムアウトしました。もう一度お試しください。", "warn");
+    } else {
+      this._notify("現在地を取得できませんでした。", "error");
+    }
   }
 }
 
@@ -213,17 +223,24 @@ interface MapProps {
   data: ParkingMeterCollection;
   /** 地図にマーカーをタップしたとき呼ばれる（properties.id を渡す） */
   onMeterClick: (meterId: string) => void;
+  /** 現在地取得などの一時的な通知を親に伝える（トースト表示用） */
+  onToast: NotifyToast;
 }
 
-export function Map({ data, onMeterClick }: MapProps) {
+export function Map({ data, onMeterClick, onToast }: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const remountedRef = useRef(false);
   const onMeterClickRef = useRef(onMeterClick);
+  const onToastRef = useRef(onToast);
 
   useEffect(() => {
     onMeterClickRef.current = onMeterClick;
   }, [onMeterClick]);
+
+  useEffect(() => {
+    onToastRef.current = onToast;
+  }, [onToast]);
 
   // 1) マップの初期化（一度だけ）
   useEffect(() => {
@@ -271,7 +288,10 @@ export function Map({ data, onMeterClick }: MapProps) {
     // → 代わりに JSX 側で固定表示する。
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    map.addControl(new GeolocateButtonControl(), "top-right");
+    map.addControl(
+      new GeolocateButtonControl((message, level) => onToastRef.current(message, level)),
+      "top-right"
+    );
 
     map.on("load", () => {
       // ────────────────────────────────────────────────────────────
