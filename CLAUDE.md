@@ -18,7 +18,7 @@
 1. **現在時刻 × 規制情報 × 祝日判定** の三段階で「今すぐ停まれる」かを判定
 2. **規制種別 72（時間制限駐車区間）と他の駐車禁止規制の重複**を検出して警告
 3. **PWA** でオフライン動作・ホーム画面追加可能
-4. **全国対応**（JARTIC オープンデータ経由で各都道府県警察のデータを統合）
+4. **全国対応（ロードマップ）**: Phase 1 は東京（警視庁 `parking-meter.jp` のオープンデータ）。全国は JARTIC オープンデータ経由で拡張予定
 
 ---
 
@@ -26,17 +26,17 @@
 
 | 領域 | 採用技術 | 理由 |
 |---|---|---|
-| フレームワーク | Next.js 15 (App Router) | RSC + PWA 対応、Vercel デプロイがシームレス |
+| フレームワーク | Next.js 15 (App Router) | RSC + PWA 対応、静的エクスポート (`output: 'export'`) 対応 |
 | 言語 | TypeScript (`strict: true`) | 型安全。`any` 禁止 |
 | スタイリング | Tailwind CSS v4 + shadcn/ui | デザイン一貫性、CSS variables ベース |
 | 地図 | MapLibre GL JS | OSS、Mapbox トークン不要、PWA 親和性高 |
-| タイル | MapTiler 無料枠 / OSM | 月10万リクエスト無料 |
+| タイル | CartoDB Voyager (ベクター) / OSM | API キー不要・商用OK、Mapbox 非依存 |
 | 状態管理 | Zustand | 軽量、persist middleware で IndexedDB 連携 |
 | ローカル DB | Dexie.js (IndexedDB) | お気に入り・履歴・データキャッシュ |
 | PWA | Serwist (`@serwist/next`) | next-pwa の後継、Workbox ベース |
-| データ取得 | GitHub Actions + Node スクリプト | 月次自動更新、JARTIC からデータ取得 |
-| ホスティング | Vercel | Next.js の最適環境、無料 tier で十分 |
-| データ配信 | 静的 JSON (Vercel) または Cloudflare R2 | データサイズ次第で判断 |
+| データ取得 | GitHub Actions + Node スクリプト | 月次自動更新。Phase 1 は警視庁 `parking-meter.jp`、全国対応で JARTIC |
+| ホスティング | VPS + Nginx | Next.js 静的エクスポート (`out/`) を Nginx で配信 |
+| データ配信 | 静的 JSON (Nginx・同一オリジン) | `public/data/{pref}.geojson` |
 | パッケージ管理 | pnpm workspaces | monorepo 構成 |
 
 ### 採用しない技術と理由
@@ -164,6 +164,8 @@ park-now-jp/
 
 ## 📊 データフロー
 
+> ⚠️ 下図は**全国対応（Phase 3）を見据えた JARTIC パイプライン構想**です。**Phase 1（現在の東京）の実データは警視庁 `parking-meter.jp`** のオープンデータを使用し、配信は **VPS + Nginx**（静的エクスポート）です。
+
 ```
 [JARTIC オープンデータ]
    (毎月月初に CSV で公開、規制種別103種別)
@@ -184,7 +186,7 @@ park-now-jp/
 [apps/web/lib/holidays/data.json]
         │
         ▼
-[ビルド → Vercel デプロイ]
+[ビルド（静的エクスポート out/） → VPS + Nginx で配信]
         │
         ▼
 [クライアント PWA]
@@ -203,12 +205,14 @@ park-now-jp/
 
 ### ライセンス
 - 本プロジェクト: **MIT License**
-- データ: JARTIC 交通規制情報 (CC-BY 4.0) → アプリ内・README で必ず出典明記
+- データ（Phase 1・東京）: 警視庁 時間制限駐車区間案内地図（`parking-meter.jp`、オープンデータ利用規約準拠）→ アプリ内・README で必ず出典明記
+- データ（全国対応・Phase 3 予定）: JARTIC 交通規制情報 (CC-BY 4.0)
+- 地図: © OpenStreetMap contributors / © CARTO
 
-### 必須の出典文言
+### 必須の出典文言（現行・東京）
 ```
-データ提供：公益財団法人 日本道路交通情報センター (JARTIC)
-出典: https://www.jartic.or.jp/service/opendata/
+データ提供：警視庁 時間制限駐車区間案内地図
+出典: https://parking-meter.jp/
 ```
 
 ### 必須の免責文言（アプリ内で常時表示）
@@ -231,7 +235,7 @@ park-now-jp/
 ### Phase 1: MVP（東京限定、ローカル動作）
 - [ ] monorepo セットアップ (pnpm workspaces)
 - [ ] `packages/shared/src/types.ts` 完成
-- [ ] `packages/data-pipeline` で東京の JARTIC データを 1回 だけ取得して GeoJSON 化
+- [ ] `packages/data-pipeline` で東京の駐車メーターデータ（警視庁 `parking-meter.jp`）を取得して GeoJSON 化
 - [ ] `apps/web` で MapLibre 地図表示 + サンプルデータ読み込み
 - [ ] `lib/parking/status.ts` 実装 + vitest で網羅テスト
 - [ ] フィルター UI（「今すぐ無料」など）
@@ -283,7 +287,7 @@ UX 設計の根幹: **3秒ルール** = 起動から「今停まれる場所」�
 
 3. **タイムゾーン**
    - JARTIC の時刻表記はローカル時間（Asia/Tokyo）
-   - サーバー（Vercel）は UTC で動くので、必ず `date-fns-tz` でラップ
+   - 実行環境（ブラウザ・CI）のタイムゾーンは不定なので、必ず `date-fns-tz` で Asia/Tokyo を明示
 
 4. **祝日判定**
    - 振替休日・国民の休日・特別休日（オリンピック開会式等）まで考慮
