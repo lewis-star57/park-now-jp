@@ -10,6 +10,8 @@
 "use client";
 
 import { clsx } from "clsx";
+import Link from "next/link";
+import { Info } from "lucide-react";
 
 export interface FilterValue {
   freeNow: boolean;
@@ -73,6 +75,15 @@ export function FilterChips({ value, onChange, hitCount, totalCount }: FilterChi
         <div className="ml-auto pl-2 text-xs text-text-dim shrink-0">
           {hitCount} / {totalCount} 件
         </div>
+        {/* 出典・利用規約への導線（about ページ） */}
+        <Link
+          href="/about/"
+          aria-label="出典・利用規約"
+          title="出典・利用規約"
+          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-bg-elev/80 backdrop-blur border border-line text-text-dim hover:text-text"
+        >
+          <Info size={16} aria-hidden />
+        </Link>
       </div>
     </div>
   );

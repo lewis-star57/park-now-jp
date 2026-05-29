@@ -103,6 +103,12 @@ export function DisclaimerDialog() {
         >
           同意して始める
         </button>
+        <p className="text-[11px] text-text-faint text-center mt-3">
+          詳しい出典・規約は{" "}
+          <a href="/about/" className="underline">
+            こちら
+          </a>
+        </p>
       </div>
     </div>
   );
