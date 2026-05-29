@@ -16,18 +16,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import type { Feature } from "geojson";
 import {
   evaluateStatus,
 } from "@/lib/parking/status";
 import { isHoliday } from "@/lib/holidays";
 import type {
   MeterStatus,
-  ParkingMeter,
   ParkingMeterCollection,
   ParkingMeterFeature,
-  ParkingMeterGeometry,
 } from "@park-now-jp/shared";
+import type { AnnotatedMeterCollection } from "@/components/map/Map";
 import { FilterChips, type FilterValue } from "@/components/filters/FilterChips";
 import { MeterSheet } from "@/components/sheet/MeterSheet";
 import { DisclaimerDialog } from "@/components/ui/DisclaimerDialog";
@@ -46,16 +44,6 @@ const MeterMap = dynamic(() => import("@/components/map/Map").then((m) => m.Map)
 });
 
 const DATA_URL = "/data/13.geojson";
-
-/** 評価結果が埋め込まれた Feature の properties */
-type AnnotatedProperties = ParkingMeter & {
-  _statusLevel: MeterStatus["level"];
-};
-
-type AnnotatedCollection = {
-  type: "FeatureCollection";
-  features: Array<Feature<ParkingMeterGeometry, AnnotatedProperties>>;
-};
 
 export default function HomePage() {
   const [raw, setRaw] = useState<ParkingMeterCollection | null>(null);
@@ -125,21 +113,11 @@ export default function HomePage() {
 
   // 評価＋フィルター適用
   const { annotated, hitCount, totalCount, statusById, meterById } = useMemo(() => {
-    if (!raw) {
-      return {
-        annotated: { type: "FeatureCollection", features: [] } as AnnotatedCollection,
-        hitCount: 0,
-        totalCount: 0,
-        statusById: new Map<string, MeterStatus>(),
-        meterById: new Map<string, ParkingMeterFeature>(),
-      };
-    }
-
     const statusById = new Map<string, MeterStatus>();
     const meterById = new Map<string, ParkingMeterFeature>();
-    const features: AnnotatedCollection["features"] = [];
+    const features: AnnotatedMeterCollection["features"] = [];
 
-    for (const f of raw.features) {
+    for (const f of raw?.features ?? []) {
       meterById.set(f.properties.id, f);
       const status = evaluateStatus(f.properties, now, isHoliday);
       statusById.set(f.properties.id, status);
@@ -158,10 +136,11 @@ export default function HomePage() {
       });
     }
 
+    const annotated: AnnotatedMeterCollection = { type: "FeatureCollection", features };
     return {
-      annotated: { type: "FeatureCollection", features },
+      annotated,
       hitCount: features.length,
-      totalCount: raw.features.length,
+      totalCount: raw?.features.length ?? 0,
       statusById,
       meterById,
     };
@@ -173,7 +152,7 @@ export default function HomePage() {
   return (
     <main className="relative h-[100dvh] w-screen overflow-hidden">
       <MeterMap
-        data={annotated as unknown as ParkingMeterCollection}
+        data={annotated}
         onMeterClick={setSelectedId}
         onToast={showToast}
       />
