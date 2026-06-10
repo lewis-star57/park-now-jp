@@ -6,6 +6,18 @@ const withSerwist = withSerwistInit({
   swDest: "public/sw.js",
   cacheOnNavigation: true,
   reloadOnOnline: true,
+  // public/ 配下の自動プリキャッシュを無効化（空配列の明示指定でスキャン停止）。
+  // - 自動スキャンは Windows ビルドで URL に \ を混入させ（例: /data\13.geojson）、
+  //   存在しない URL の取得失敗で SW のインストール自体が失敗する
+  //   （2026-06-10 の本番障害の直接原因）
+  // - GeoJSON・アイコン類はランタイムキャッシュ（app/sw.ts）に一本化する（M-4）
+  additionalPrecacheEntries: [],
+  // プリキャッシュ（SW インストール時の一括取得）から除外するもの:
+  // - .map / manifest*.js: ビルドの副産物（既定の除外を維持）
+  // - .html: ランタイムの NetworkFirst に一本化。旧 HTML が固定化されると
+  //   デプロイで消えた旧チャンクを参照し続けて起動不能になるため
+  // - .geojson: ランタイムの SWR に一本化（M-4: 二重保持・更新停滞の解消）
+  exclude: [/\.map$/, /^manifest.*\.js$/, /\.html$/, /\.geojson$/],
 });
 
 const nextConfig: NextConfig = {
