@@ -9,14 +9,11 @@
  */
 
 import type {
-  Feature,
-  LineString,
-} from "geojson";
-import type {
   JarticRawRecord,
   ParkingMeter,
   ParkingMeterCollection,
   ParkingMeterFeature,
+  ParkingMeterGeometry,
   PrefectureCode,
 } from "@park-now-jp/shared";
 import { RegulationCode } from "@park-now-jp/shared";
@@ -55,7 +52,7 @@ export function recordToParkingMeter(
     operatingDays: parseOperatingDays(details),
     exclusions: parseExclusions(details),
     overlappingRegulations: [], // 後段で統合
-    lastUpdated: new Date().toISOString().split("T")[0],
+    lastUpdated: new Date().toISOString().slice(0, 10),
   };
 
   return meter;
@@ -88,17 +85,20 @@ export function buildGeoJsonForPrefecture(
     // 同位置の他の規制を検出（簡易: 座標が近いもの）
     meter.overlappingRegulations = findOverlapping(coords, otherRegulations);
 
-    const geometry: LineString =
+    // 1点しかない区間は「同一点2つの見えない線」ではなく Point として出力する
+    // （アプリの地図は Point 描画にも対応している）。
+    // coords[0] の non-null assertion は直前の length === 0 ガードで保証される。
+    const geometry: ParkingMeterGeometry =
       coords.length >= 2
         ? { type: "LineString", coordinates: coords }
-        : { type: "LineString", coordinates: [coords[0], coords[0]] };
+        : { type: "Point", coordinates: coords[0]! };
 
-    const feature: Feature<LineString, ParkingMeter> = {
+    const feature: ParkingMeterFeature = {
       type: "Feature",
       properties: meter,
       geometry,
     };
-    features.push(feature as ParkingMeterFeature);
+    features.push(feature);
   }
 
   return {
@@ -136,12 +136,19 @@ function detectVehicleType(details: Record<string, string | number>): ParkingMet
 }
 
 function parseOperatingHours(details: Record<string, string | number>): ParkingMeter["operatingHours"] {
-  // TODO: "09:00-19:00" のような形式をパース
+  // TODO: "09:00-19:00" のような形式をパース（実データのフィールド名・形式は要確認）
   const raw = String(details.operatingHours ?? "09:00-19:00");
-  return raw.split(",").map((part) => {
+  const hours: ParkingMeter["operatingHours"] = [];
+  for (const part of raw.split(",")) {
     const [start, end] = part.trim().split("-");
-    return { startTime: start, endTime: end };
-  });
+    // "09:00-19:00" の形になっていない断片は取り込まない（undefined 混入防止）
+    if (start && end) {
+      hours.push({ startTime: start, endTime: end });
+    } else {
+      console.warn(`⚠ Skipping malformed operating hours: "${part}"`);
+    }
+  }
+  return hours;
 }
 
 function parseOperatingDays(details: Record<string, string | number>): ParkingMeter["operatingDays"] {
