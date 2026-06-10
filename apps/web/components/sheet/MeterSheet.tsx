@@ -306,8 +306,13 @@ export function MeterSheet({ meter, status, geometry, onClose }: MeterSheetProps
             </a>
           )}
 
-          {/* 免責 */}
+          {/* データ基準日（鮮度の判断材料として免責の直前に表示） */}
           <p className="text-[11px] leading-relaxed text-text-faint pt-2">
+            データ基準日: {meter.lastUpdated}（警視庁 時間制限駐車区間案内地図）
+          </p>
+
+          {/* 免責 */}
+          <p className="text-[11px] leading-relaxed text-text-faint">
             {DISCLAIMER_TEXT}
           </p>
         </div>

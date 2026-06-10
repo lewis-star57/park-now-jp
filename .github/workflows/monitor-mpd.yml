@@ -1,0 +1,176 @@
+name: Monitor MPD data source
+
+# 警視庁「時間制限駐車区間案内地図」(parking-meter.jp) の死活監視と更新検知。
+#
+# 背景: 2026年3月31日〜4月末頃、提供サイトが「新サービス構築のため」実際に
+# 公開を一時停止した実績がある（その後再開）。次の停止・移転・データ更新を
+# 最速で検知するため、毎月ライブの GeoJSON を取得して
+#   (a) 取得失敗  (b) 中身の異常  (c) リポジトリ内スナップショットとの差分
+# のいずれかを検知したら Issue を自動起票する。
+#
+# 比較基準: data-sources/mpd/<最新日付>/parkingmeter.geojson（出所保全用の
+# 生データスナップショット）。更新手順は data-sources/mpd/README.md を参照。
+
+on:
+  schedule:
+    # 毎月5日 10:00 JST (01:00 UTC)。update-data.yml（毎月3日）とはずらす
+    - cron: "0 1 5 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  DATA_URL: https://parking-meter.jp/parkingmeter.geojson
+
+jobs:
+  monitor:
+    name: Check parking-meter.jp data
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch live GeoJSON
+        id: fetch
+        continue-on-error: true
+        run: |
+          curl -sS -f --retry 3 --retry-delay 10 --max-time 90 \
+            -o /tmp/live.geojson "$DATA_URL"
+
+      - name: Validate and compare with snapshot
+        id: check
+        if: steps.fetch.outcome == 'success'
+        run: |
+          # 1) GeoJSON として妥当か・件数
+          if ! COUNT=$(node -e '
+            const j = JSON.parse(require("fs").readFileSync("/tmp/live.geojson", "utf8"));
+            if (j.type !== "FeatureCollection" || !Array.isArray(j.features)) process.exit(2);
+            console.log(j.features.length);
+          '); then
+            echo "result=invalid" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$COUNT" -lt 1 ]; then
+            echo "result=invalid" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 2) リポジトリ内の最新スナップショットとハッシュ比較
+          REF_DIR=$(ls -d data-sources/mpd/*/ | sort | tail -1)
+          REF_FILE="${REF_DIR}parkingmeter.geojson"
+          LIVE_HASH=$(sha256sum /tmp/live.geojson | cut -d' ' -f1)
+          REF_HASH=$(sha256sum "$REF_FILE" | cut -d' ' -f1)
+          {
+            echo "live_hash=$LIVE_HASH"
+            echo "ref_hash=$REF_HASH"
+            echo "ref_file=$REF_FILE"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$LIVE_HASH" = "$REF_HASH" ]; then
+            echo "result=unchanged" >> "$GITHUB_OUTPUT"
+            echo "✓ ライブデータはスナップショット ($REF_FILE) と一致（$COUNT 件）"
+          else
+            echo "result=changed" >> "$GITHUB_OUTPUT"
+            echo "⚠ ライブデータがスナップショットと異なる（$COUNT 件）"
+          fi
+
+      - name: Create issue (fetch failed)
+        if: steps.fetch.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="⚠ MPD監視: parking-meter.jp からデータを取得できません"
+          if gh issue list --state open --limit 100 --json title --jq '.[].title' | grep -Fxq "$TITLE"; then
+            echo "同名の Open Issue が既にあるため起票をスキップ"
+            exit 0
+          fi
+          cat > /tmp/body.md <<'EOF'
+          ## 何が起きたか
+
+          月次監視で `https://parking-meter.jp/parkingmeter.geojson` の取得に失敗しました（リトライ3回込み）。
+
+          ## 確認すること
+
+          1. https://parking-meter.jp/ 自体が開けるか（再びの公開一時停止・告知の有無）
+          2. 警視庁の案内ページに告知がないか:
+             https://www.keishicho.metro.tokyo.lg.jp/kotsu/hairyo/tadashi_pking/chizu.html
+          3. URL・ドメインの変更がないか
+
+          ## 補足
+
+          - アプリは静的データ（apps/web/public/data/13.geojson）で動作し続けるため、即時の障害ではありません。
+          - 最後に検証済みの生データは `data-sources/mpd/` に保全済みです（README 参照）。
+          EOF
+          gh issue create --title "$TITLE" --body-file /tmp/body.md
+
+      - name: Create issue (invalid data)
+        if: steps.fetch.outcome == 'success' && steps.check.outputs.result == 'invalid'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="⚠ MPD監視: parking-meter.jp のデータが異常です"
+          if gh issue list --state open --limit 100 --json title --jq '.[].title' | grep -Fxq "$TITLE"; then
+            echo "同名の Open Issue が既にあるため起票をスキップ"
+            exit 0
+          fi
+          cat > /tmp/body.md <<'EOF'
+          ## 何が起きたか
+
+          月次監視で `https://parking-meter.jp/parkingmeter.geojson` は取得できましたが、
+          中身が正常な GeoJSON FeatureCollection ではない、または 0 件でした。
+
+          ## 確認すること
+
+          1. ブラウザで上記 URL を開き、中身を目視確認する
+          2. サイトのリニューアル・移転の告知がないか確認する
+
+          ## 補足
+
+          - アプリは静的データで動作し続けるため、即時の障害ではありません。
+          - 最後に検証済みの生データは `data-sources/mpd/` に保全済みです（README 参照）。
+          EOF
+          gh issue create --title "$TITLE" --body-file /tmp/body.md
+
+      - name: Create issue (data changed)
+        if: steps.fetch.outcome == 'success' && steps.check.outputs.result == 'changed'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COUNT: ${{ steps.check.outputs.count }}
+          LIVE_HASH: ${{ steps.check.outputs.live_hash }}
+          REF_HASH: ${{ steps.check.outputs.ref_hash }}
+          REF_FILE: ${{ steps.check.outputs.ref_file }}
+        run: |
+          TITLE="ℹ MPD監視: parking-meter.jp のデータ更新を検知しました"
+          if gh issue list --state open --limit 100 --json title --jq '.[].title' | grep -Fxq "$TITLE"; then
+            echo "同名の Open Issue が既にあるため起票をスキップ"
+            exit 0
+          fi
+          cat > /tmp/body.md <<EOF
+          ## 何が起きたか
+
+          月次監視で、ライブの \`/parkingmeter.geojson\` がリポジトリ内の最新スナップショットと異なることを検知しました。
+          警視庁がデータを更新した可能性があります。
+
+          | 項目 | 値 |
+          |---|---|
+          | ライブの件数 | $COUNT 件 |
+          | ライブの SHA-256 | \`$LIVE_HASH\` |
+          | スナップショットの SHA-256 | \`$REF_HASH\` |
+          | 比較基準ファイル | \`$REF_FILE\` |
+
+          ## 対応手順
+
+          \`data-sources/mpd/README.md\` の「更新手順」に従って、
+          新しいスナップショットの保存とアプリ用データ（13.geojson）の更新 PR を作成してください。
+          EOF
+          gh issue create --title "$TITLE" --body-file /tmp/body.md
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "fetch: ${{ steps.fetch.outcome }} / check: ${{ steps.check.outputs.result || 'n/a' }} / count: ${{ steps.check.outputs.count || 'n/a' }}"
