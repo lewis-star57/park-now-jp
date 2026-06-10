@@ -26,6 +26,10 @@ const holidaySet = new Set(holidays.map((h) => h.date));
 /**
  * 指定日が祝日かどうかを判定する。
  * タイムゾーンは Asia/Tokyo で正規化される。
+ *
+ * 注意: 引数には実時刻（new Date() 等）をそのまま渡すこと。
+ * toZonedTime で変換済みの Date を渡すと二重変換になり、日本時間以外の
+ * 端末では JST 15時以降の日付が翌日にズレる。
  */
 export function isHoliday(date: Date): boolean {
   const jst = toZonedTime(date, TIMEZONE);

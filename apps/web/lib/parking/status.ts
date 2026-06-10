@@ -14,7 +14,7 @@
  * @see docs/STATUS_LOGIC.md
  */
 
-import { toZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import type {
   DayOfWeek,
   OperatingHour,
@@ -31,15 +31,18 @@ import { TIMEZONE, VEHICLE_TYPE_LABELS } from "@park-now-jp/shared";
  * メーターの現在ステータスを評価する。
  *
  * @param meter 評価対象のメーター
- * @param now  現在時刻（UTC でも JST でも OK、内部で JST に正規化）
- * @param isHoliday 指定日が祝日かどうかを返す関数
+ * @param now  現在時刻（実時刻。内部で JST に正規化する）
+ * @param isHoliday 指定時刻（実時刻）が JST で祝日かどうかを返す関数
  * @returns ステータスオブジェクト
  */
 export const evaluateStatus: StatusEvaluator = (meter, now, isHoliday) => {
   // すべての判定は JST で行う
   const jst = toZonedTime(now, TIMEZONE);
   const day = jst.getDay() as DayOfWeek;
-  const holiday = isHoliday(jst);
+  // isHoliday には変換前の now をそのまま渡す（isHoliday が内部で JST に正規化する）。
+  // toZonedTime 済みの jst を渡すと二重変換になり、日本時間以外の端末では
+  // JST 15時以降の祝日判定が翌日にズレる（例: 祝日前日の夕方に「無料」誤表示）。
+  const holiday = isHoliday(now);
 
   // ────────────────────────────────────────────────────────────
   // ステップ 1: 重複する駐車禁止規制をチェック
@@ -167,29 +170,49 @@ function hhmmToMinutes(hhmm: string): number {
 }
 
 /**
- * 次にステータスが変わる時刻（おおよそ）。
+ * 次にステータスが変わる時刻（おおよそ）を実時刻（UTC 基準の Date）で返す。
  * UI で「あと N 分で稼働終了」等を表示するために使う。
  *
- * 簡易実装: メーターの一番近い終了時刻を返す
+ * 簡易実装: 現在アクティブな稼働時間帯のうち、最も近い終了時刻を返す。
+ * 日跨ぎ稼働（例: 22:00-06:00）では終了時刻が翌日になる。
+ *
+ * 実行環境のタイムゾーンに依存しないよう、JST の壁時計で目標時刻を
+ * 組み立ててから fromZonedTime で実時刻へ変換する（setHours +
+ * toISOString だけだと端末 TZ が JST のときしか正しくならない）。
+ *
+ * @param meter 評価対象のメーター
+ * @param jst evaluateStatus が toZonedTime で作る JST 壁時計表現
  */
 function nextHourBoundary(meter: ParkingMeter, jst: Date): Date {
   const minutesNow = jst.getHours() * 60 + jst.getMinutes();
-  const endMinutes = meter.operatingHours
-    .map((h) => hhmmToMinutes(h.endTime))
-    .filter((m) => m > minutesNow)
-    .sort((a, b) => a - b)[0];
 
-  if (endMinutes === undefined) {
-    // 翌日の最初の開始時刻にする
-    const next = new Date(jst);
-    next.setDate(next.getDate() + 1);
-    next.setHours(0, 0, 0, 0);
-    return next;
+  // 現在アクティブな時間帯それぞれの終了時刻（当日 0:00 からの分。翌日終了は +24h）
+  const endCandidates: number[] = [];
+  for (const h of meter.operatingHours) {
+    const start = hhmmToMinutes(h.startTime);
+    const end = hhmmToMinutes(h.endTime);
+    if (end < start) {
+      // 日跨ぎ（例: 22:00-06:00）
+      if (minutesNow >= start) {
+        endCandidates.push(end + 24 * 60); // 夜側にいる → 終了は翌日の end
+      } else if (minutesNow < end) {
+        endCandidates.push(end); // 深夜〜早朝側にいる → 終了は当日の end
+      }
+    } else if (minutesNow >= start && minutesNow < end) {
+      endCandidates.push(end);
+    }
   }
 
-  const next = new Date(jst);
-  next.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
-  return next;
+  // JST 壁時計上で目標時刻を組み立てる（setMinutes は 1440 分超を翌日に繰り上げる）
+  const wall = new Date(jst);
+  wall.setHours(0, 0, 0, 0);
+  if (endCandidates.length === 0) {
+    // 稼働中でないのに呼ばれた場合の保険: 翌日 0:00
+    wall.setDate(wall.getDate() + 1);
+  } else {
+    wall.setMinutes(Math.min(...endCandidates));
+  }
+  return fromZonedTime(wall, TIMEZONE);
 }
 
 // ============================================================================
