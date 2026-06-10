@@ -19,14 +19,11 @@
  * 5. 規制種別 = 72 のみフィルター
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
-import { createWriteStream } from "node:fs";
+// 注意: ZIP ダウンロード・解凍の実装時には node:stream / node:fs / unzipper の
+// import を戻すこと（下の TODO コメント内のコード例を参照）。
+import { mkdir } from "node:fs/promises";
 import iconv from "iconv-lite";
 import { parse } from "csv-parse/sync";
-import unzipper from "unzipper";
 import type { JarticRawRecord, PrefectureCode } from "@park-now-jp/shared";
 
 // ============================================================================
@@ -94,6 +91,7 @@ export async function fetchJarticData(
   console.warn("⚠ fetchJarticData is not yet fully implemented");
   console.warn(`  Target: ${prefectures?.join(",") ?? "all 47 prefectures"}`);
   console.warn(`  Cache: ${cacheDir}`);
+  console.warn(`  Source (to implement): ${JARTIC_BASE_URL}`);
   console.warn(`  See JARTIC_MIRROR_URL for past data: ${JARTIC_MIRROR_URL}`);
 
   return new Map();
@@ -129,6 +127,16 @@ export function parseCoordinates(raw: string): [number, number][] {
   for (let i = 0; i < tokens.length; i += 2) {
     const lng = tokens[i];
     const lat = tokens[i + 1];
+    // NaN は大小比較がすべて false になり範囲チェックを素通りするため、
+    // 先に数値として有効かを検査する
+    if (
+      lng === undefined ||
+      lat === undefined ||
+      !Number.isFinite(lng) ||
+      !Number.isFinite(lat)
+    ) {
+      throw new Error(`Invalid coordinate token (not a number): ${raw}`);
+    }
     // 簡易バリデーション: 日本の経緯度範囲
     if (lng < 122 || lng > 154 || lat < 20 || lat > 46) {
       throw new Error(`Coordinate out of Japan range: [${lng}, ${lat}]`);

@@ -8,7 +8,7 @@
     "fetch:tokyo": "tsx src/index.ts --pref 13",
     "fetch:holidays": "tsx src/fetch-holidays.ts ../../apps/web/lib/holidays/data.json",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "echo 'data-pipeline typecheck skipped — Phase 1 legacy strict errors, see #2'",
+    "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured'"
   },
   "dependencies": {
