@@ -194,6 +194,10 @@ export type StatusLevel =
 /**
  * ステータス判定関数のシグネチャ。
  * 純粋関数として実装すること（Date.now() 等の副作用禁止）。
+ *
+ * 契約: `now` と `isHoliday` の引数 `date` には「実時刻」を渡す
+ * （toZonedTime 等で変換済みの Date を渡さない）。Asia/Tokyo への
+ * 正規化は evaluateStatus / isHoliday それぞれの内部で行う。
  */
 export type StatusEvaluator = (
   meter: ParkingMeter,

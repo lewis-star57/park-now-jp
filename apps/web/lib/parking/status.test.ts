@@ -6,6 +6,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { formatInTimeZone } from "date-fns-tz";
 import type { Holiday, ParkingMeter } from "@park-now-jp/shared";
 import { evaluateStatus } from "./status";
 
@@ -20,8 +21,9 @@ const HOLIDAYS_2026: Holiday[] = [
   { date: "2026-05-05", name: "こどもの日" },
 ];
 
+// 本番の lib/holidays と同じ契約: 実時刻を受け取り、JST の日付で判定する
 const isHoliday = (date: Date): boolean => {
-  const ymd = date.toISOString().split("T")[0];
+  const ymd = formatInTimeZone(date, "Asia/Tokyo", "yyyy-MM-dd");
   return HOLIDAYS_2026.some((h) => h.date === ymd);
 };
 
@@ -210,12 +212,10 @@ describe("evaluateStatus", () => {
   });
 
   describe("nextChangeAt", () => {
-    it("メーター稼働中はメーター終了時刻を返す", () => {
+    it("メーター稼働中はメーター終了時刻を返す（実行環境の TZ に依存しない絶対時刻）", () => {
       const status = evaluateStatus(standardMeter, tokyo("2026-05-11", 14, 0), isHoliday);
-      expect(status.nextChangeAt).toBeDefined();
-      // 14:00 → 次は 19:00
-      const next = new Date(status.nextChangeAt!);
-      expect(next.getUTCHours()).toBe(10); // 19 JST = 10 UTC
+      // 14:00 → 次は 19:00 JST = 10:00 UTC
+      expect(status.nextChangeAt).toBe("2026-05-11T10:00:00.000Z");
     });
   });
 });

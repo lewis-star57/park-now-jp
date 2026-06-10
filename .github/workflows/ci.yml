@@ -11,11 +11,9 @@ jobs:
     name: Lint, Type-check, Test
     runs-on: ubuntu-latest
 
-    # status.ts の nextHourBoundary が setHours() を使っているため、
-    # ジョブのローカル TZ が JST でないと nextChangeAt のテストが
-    # UTC ランナー上で失敗する。アプリが日本専用なので TZ を明示。
-    env:
-      TZ: Asia/Tokyo
+    # 注意: ジョブ全体の TZ は固定しない。
+    # 判定ロジックは端末タイムゾーンに依存しない実装になっており、
+    # それを保証するためテストは UTC / JST の両方で実行する（下記 Test ステップ）。
 
     steps:
       - name: Checkout
@@ -40,8 +38,15 @@ jobs:
       - name: Type-check
         run: pnpm typecheck
 
-      - name: Test
+      - name: Test (TZ=UTC)
         run: pnpm test
+        env:
+          TZ: UTC
+
+      - name: Test (TZ=Asia/Tokyo)
+        run: pnpm test
+        env:
+          TZ: Asia/Tokyo
 
       - name: Build (web)
         run: pnpm --filter @park-now-jp/web build
