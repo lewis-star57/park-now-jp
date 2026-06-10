@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { DATA_SOURCES, DISCLAIMER_TEXT } from "@park-now-jp/shared";
+import mpdMeta from "@/lib/data-sources/mpd-meta.json";
 
 export const metadata: Metadata = {
   title: "出典・利用規約 — Park Now JP",
@@ -70,6 +71,12 @@ export default function AboutPage() {
               </ExternalA>
               <p className="text-xs text-text-dim mt-1">
                 {DATA_SOURCES.mpd.license}
+              </p>
+              {/* データの鮮度をユーザーが判断できるよう基準日を明示する */}
+              <p className="text-xs text-text-dim mt-1">
+                データ基準日: {mpdMeta.snapshotDate}（全{mpdMeta.featureCount}
+                区間） — 取得元データの作成時点です。実際の規制は変更されている
+                場合があります。
               </p>
               <p className="text-xs mt-1">
                 <ExternalA href={DATA_SOURCES.mpd.termsUrl} small>
