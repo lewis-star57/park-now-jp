@@ -14,10 +14,19 @@
 
 import { useEffect, useRef } from "react";
 import type { FeatureCollection, Polygon } from "geojson";
-import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { ParkingMeter, ParkingMeterGeometry, StatusLevel } from "@park-now-jp/shared";
 import type { ToastLevel } from "@/components/ui/Toast";
+
+// MapLibre 6 は既定で import.meta.url を基準に worker を探すが、webpack ビルドでは
+// file:// に置き換わり解決できない（worker URL が空になり HTML を読みに行く）。
+// worker を静的アセットとして書き出させ、その URL を明示する。
+// 出力名・拡張子は next.config.ts の webpack ルールで .js に揃えている（nginx 対策）。
+maplibregl.setWorkerUrl(
+  new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href,
+);
 
 const VOYAGER_STYLE =
   "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";

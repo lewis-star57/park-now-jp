@@ -50,6 +50,18 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "maplibre-gl"],
   },
+
+  // MapLibre 6 の worker（components/map/Map.tsx で setWorkerUrl する）を
+  // `_next/static/media/` に .js として書き出す。VPS の nginx の mime.types には
+  // .mjs が無く application/octet-stream で返り、module worker が起動できないため。
+  webpack(config) {
+    config.module.rules.push({
+      test: /maplibre-gl-worker\.mjs$/,
+      type: "asset/resource",
+      generator: { filename: "static/media/maplibre-gl-worker.[contenthash].js" },
+    });
+    return config;
+  },
 };
 
 export default withSerwist(nextConfig);
